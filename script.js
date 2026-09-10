@@ -12,6 +12,9 @@
   const playBtn = document.getElementById('play-btn');
   const pauseBtn = document.getElementById('pause-btn');
   const stopBtn = document.getElementById('stop-btn');
+  const recordBtn = document.getElementById('record-btn');
+  const recordedAudioEl = document.getElementById('recorded-audio');
+  const downloadRecordingBtn = document.getElementById('download-recording-btn');
   const statusEl = document.getElementById('status');
   const unsupportedEl = document.getElementById('unsupported');
   const historyCard = document.getElementById('history-card');
@@ -46,6 +49,10 @@
   let chunkIndex = 0;
   let stoppedManually = false;
   let keepAliveTimer = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let micStream = null;
+  let isRecordingSession = false;
   const MAX_CHUNK_LEN = 180;
   const KEEP_ALIVE_MS = 10000;
 
@@ -142,12 +149,19 @@
     }
   }
 
+  function stopRecordingIfActive() {
+    if (isRecordingSession && mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+  }
+
   function speakChunk() {
     if (chunkIndex >= chunks.length) {
       stopKeepAlive();
       isPaused = false;
       setStatus('読み上げが完了しました');
       setButtonsState({ playing: false, paused: false });
+      stopRecordingIfActive();
       return;
     }
 
@@ -230,6 +244,63 @@
     isPaused = false;
     setStatus('停止しました');
     setButtonsState({ playing: false, paused: false });
+    stopRecordingIfActive();
+  }
+
+  async function handleRecordAndSpeak() {
+    if (isRecordingSession) return;
+
+    const text = textInput.value.trim();
+    if (!text) {
+      setStatus('読み上げるテキストを入力してください');
+      return;
+    }
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setStatus('マイクへのアクセスが許可されませんでした');
+      return;
+    }
+
+    recordedChunks = [];
+    recordedAudioEl.hidden = true;
+    downloadRecordingBtn.hidden = true;
+
+    mediaRecorder = new MediaRecorder(micStream);
+    mediaRecorder.addEventListener('dataavailable', (event) => {
+      if (event.data.size > 0) recordedChunks.push(event.data);
+    });
+    mediaRecorder.addEventListener('stop', () => {
+      micStream.getTracks().forEach((track) => track.stop());
+      isRecordingSession = false;
+      recordBtn.classList.remove('recording');
+      recordBtn.textContent = '🎙️ 録音して読み上げ';
+
+      if (!recordedChunks.length) return;
+      const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      recordedAudioEl.src = url;
+      recordedAudioEl.hidden = false;
+      downloadRecordingBtn.hidden = false;
+      downloadRecordingBtn.onclick = () => {
+        const ext = (mediaRecorder.mimeType || '').includes('mp4') ? 'm4a' : 'webm';
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `yomiage-rokuon-${Date.now()}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+    });
+
+    mediaRecorder.start();
+    isRecordingSession = true;
+    recordBtn.classList.add('recording');
+    recordBtn.textContent = '⏺ 録音中…';
+    setStatus('録音しながら読み上げます');
+    speak(text);
+    saveHistory(text);
   }
 
   function loadHistory() {
@@ -355,6 +426,9 @@
     shareBtn.hidden = false;
     shareBtn.addEventListener('click', handleShare);
   }
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    document.getElementById('record-row').hidden = true;
+  }
   copyBtn.addEventListener('click', handleCopy);
   quickCopyBtn.addEventListener('click', handleCopy);
   pasteBtn.addEventListener('click', handlePaste);
@@ -418,6 +492,7 @@
   playBtn.addEventListener('click', handlePlay);
   pauseBtn.addEventListener('click', handlePauseResume);
   stopBtn.addEventListener('click', handleStop);
+  recordBtn.addEventListener('click', handleRecordAndSpeak);
   historyClearBtn.addEventListener('click', () => {
     localStorage.removeItem(HISTORY_KEY);
     renderHistory();
