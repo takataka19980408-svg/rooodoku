@@ -29,6 +29,18 @@
   const noJapaneseVoiceEl = document.getElementById('no-japanese-voice');
   const presetBtns = document.querySelectorAll('.preset-btn');
   const refreshVoicesBtn = document.getElementById('refresh-voices-btn');
+  const aiVoiceToggle = document.getElementById('ai-voice-toggle');
+  const aiVoiceSettings = document.getElementById('ai-voice-settings');
+  const elevenApiKeyInput = document.getElementById('eleven-api-key');
+  const elevenVoiceSelect = document.getElementById('eleven-voice-select');
+  const elevenDeleteVoiceBtn = document.getElementById('eleven-delete-voice-btn');
+  const elevenVoiceNameInput = document.getElementById('eleven-voice-name');
+  const elevenVoiceFileInput = document.getElementById('eleven-voice-file');
+  const elevenCloneBtn = document.getElementById('eleven-clone-btn');
+  const elevenExistingNameInput = document.getElementById('eleven-existing-name');
+  const elevenExistingIdInput = document.getElementById('eleven-existing-id');
+  const elevenAddExistingBtn = document.getElementById('eleven-add-existing-btn');
+  const elevenStatus = document.getElementById('eleven-status');
 
   if (!('speechSynthesis' in window)) {
     document.querySelector('.card').hidden = true;
@@ -47,6 +59,18 @@
   let keepAliveTimer = null;
   const MAX_CHUNK_LEN = 180;
   const KEEP_ALIVE_MS = 10000;
+
+  // ElevenLabs AIクローン音声
+  const ELEVEN_KEY_STORAGE = 'rooodoku-elevenlabs-key';
+  const ELEVEN_VOICES_STORAGE = 'rooodoku-elevenlabs-voices';
+  const ELEVEN_SELECTED_VOICE_STORAGE = 'rooodoku-elevenlabs-selected-voice';
+  const TTS_MODE_STORAGE = 'rooodoku-tts-mode';
+  const ELEVEN_MAX_CHUNK_LEN = 800;
+  let ttsMode = localStorage.getItem(TTS_MODE_STORAGE) === 'elevenlabs' ? 'elevenlabs' : 'device';
+  let currentAudio = null;
+  let audioChunks = [];
+  let audioChunkIndex = 0;
+  let audioStoppedManually = false;
 
   function loadVoices() {
     const allVoices = synth.getVoices();
@@ -181,7 +205,7 @@
     synth.speak(utterance);
   }
 
-  function speak(text) {
+  function speakWithDevice(text) {
     stoppedManually = false;
     synth.cancel();
     chunks = splitIntoChunks(text);
@@ -190,12 +214,133 @@
     speakChunk();
   }
 
+  // --- ElevenLabs AIクローン音声 ---
+  async function elevenLabsRequest(url, options) {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      let message = `エラー(${response.status})`;
+      try {
+        const err = await response.json();
+        const detail = err.detail;
+        message += `: ${(detail && (detail.message || detail)) || JSON.stringify(err)}`;
+      } catch {
+        // レスポンスがJSONでない場合はそのまま
+      }
+      throw new Error(message);
+    }
+    return response;
+  }
+
+  async function elevenLabsTTS(text, voiceId, apiKey) {
+    const response = await elevenLabsRequest(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg',
+      },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+    });
+    return response.blob();
+  }
+
+  async function elevenLabsCloneVoice(name, file, apiKey) {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('files', file);
+    const response = await elevenLabsRequest('https://api.elevenlabs.io/v1/voices/add', {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey },
+      body: formData,
+    });
+    const data = await response.json();
+    return data.voice_id;
+  }
+
+  function playAudioChunks() {
+    if (audioChunkIndex >= audioChunks.length) {
+      setStatus('読み上げが完了しました');
+      setButtonsState({ playing: false, paused: false });
+      return;
+    }
+
+    const apiKey = elevenApiKeyInput.value.trim();
+    const voiceId = elevenVoiceSelect.value;
+    setStatus(`AI音声を生成中…(${audioChunkIndex + 1}/${audioChunks.length})`);
+
+    elevenLabsTTS(audioChunks[audioChunkIndex], voiceId, apiKey)
+      .then((blob) => {
+        if (audioStoppedManually) return;
+        const url = URL.createObjectURL(blob);
+        currentAudio = new Audio(url);
+        currentAudio.onplay = () => {
+          setStatus(`読み上げ中(AI音声)…(${audioChunkIndex + 1}/${audioChunks.length})`);
+          setButtonsState({ playing: true, paused: false });
+        };
+        currentAudio.onended = () => {
+          URL.revokeObjectURL(url);
+          if (audioStoppedManually) return;
+          audioChunkIndex += 1;
+          playAudioChunks();
+        };
+        currentAudio.onerror = () => {
+          setStatus('AI音声の再生に失敗しました');
+          setButtonsState({ playing: false, paused: false });
+        };
+        currentAudio.play();
+      })
+      .catch((err) => {
+        setStatus(err.message || 'AI音声の生成に失敗しました');
+        setButtonsState({ playing: false, paused: false });
+      });
+  }
+
+  function speakWithElevenLabs(text) {
+    audioStoppedManually = false;
+    audioChunks = splitIntoChunks(text, ELEVEN_MAX_CHUNK_LEN);
+    audioChunkIndex = 0;
+    playAudioChunks();
+  }
+
+  function speak(text) {
+    if (ttsMode === 'elevenlabs') {
+      speakWithElevenLabs(text);
+    } else {
+      speakWithDevice(text);
+    }
+  }
+
   function handlePlay() {
     const text = textInput.value.trim();
     if (!text) {
       setStatus('読み上げるテキストを入力してください');
       return;
     }
+
+    if (ttsMode === 'elevenlabs') {
+      if (currentAudio && currentAudio.paused && audioChunks.length) {
+        currentAudio.play();
+        setStatus('読み上げ中(AI音声)…');
+        setButtonsState({ playing: true, paused: false });
+        return;
+      }
+      if (!elevenApiKeyInput.value.trim()) {
+        setStatus('ElevenLabsのAPIキーを入力してください');
+        return;
+      }
+      if (!elevenVoiceSelect.value) {
+        setStatus('使う声を選択(またはクローンを作成)してください');
+        return;
+      }
+      speak(text);
+      saveHistory(text);
+      return;
+    }
+
     if (synth.paused) {
       synth.resume();
       isPaused = false;
@@ -208,6 +353,20 @@
   }
 
   function handlePauseResume() {
+    if (ttsMode === 'elevenlabs') {
+      if (!currentAudio) return;
+      if (currentAudio.paused) {
+        currentAudio.play();
+        setStatus('読み上げ中(AI音声)…');
+        setButtonsState({ playing: true, paused: false });
+      } else {
+        currentAudio.pause();
+        setStatus('一時停止中');
+        setButtonsState({ playing: true, paused: true });
+      }
+      return;
+    }
+
     if (!synth.speaking) return;
     if (isPaused) {
       synth.resume();
@@ -223,6 +382,18 @@
   }
 
   function handleStop() {
+    if (ttsMode === 'elevenlabs') {
+      audioStoppedManually = true;
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+      }
+      setStatus('停止しました');
+      setButtonsState({ playing: false, paused: false });
+      return;
+    }
+
     stoppedManually = true;
     synth.cancel();
     stopKeepAlive();
@@ -336,6 +507,47 @@
     importFile.value = '';
   }
 
+  function loadElevenVoiceList() {
+    let list = [];
+    try {
+      list = JSON.parse(localStorage.getItem(ELEVEN_VOICES_STORAGE)) || [];
+    } catch {
+      list = [];
+    }
+    return list;
+  }
+
+  function renderElevenVoices() {
+    const list = loadElevenVoiceList();
+    elevenVoiceSelect.innerHTML = '';
+    if (!list.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'まだ登録されていません';
+      elevenVoiceSelect.appendChild(opt);
+      return;
+    }
+    list.forEach((v) => {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.name;
+      elevenVoiceSelect.appendChild(opt);
+    });
+    const saved = localStorage.getItem(ELEVEN_SELECTED_VOICE_STORAGE);
+    if (saved && list.some((v) => v.id === saved)) {
+      elevenVoiceSelect.value = saved;
+    }
+  }
+
+  function saveElevenVoice(id, name) {
+    const list = loadElevenVoiceList().filter((v) => v.id !== id);
+    list.push({ id, name });
+    localStorage.setItem(ELEVEN_VOICES_STORAGE, JSON.stringify(list));
+    renderElevenVoices();
+    elevenVoiceSelect.value = id;
+    localStorage.setItem(ELEVEN_SELECTED_VOICE_STORAGE, id);
+  }
+
   if (navigator.share) {
     shareBtn.hidden = false;
     shareBtn.addEventListener('click', handleShare);
@@ -345,6 +557,79 @@
   exportBtn.addEventListener('click', handleExport);
   importBtn.addEventListener('click', () => importFile.click());
   importFile.addEventListener('change', handleImportChange);
+
+  const savedElevenKey = localStorage.getItem(ELEVEN_KEY_STORAGE);
+  if (savedElevenKey) elevenApiKeyInput.value = savedElevenKey;
+  renderElevenVoices();
+  aiVoiceToggle.checked = ttsMode === 'elevenlabs';
+  aiVoiceSettings.hidden = !aiVoiceToggle.checked;
+
+  aiVoiceToggle.addEventListener('change', () => {
+    ttsMode = aiVoiceToggle.checked ? 'elevenlabs' : 'device';
+    localStorage.setItem(TTS_MODE_STORAGE, ttsMode);
+    aiVoiceSettings.hidden = !aiVoiceToggle.checked;
+  });
+
+  elevenApiKeyInput.addEventListener('change', () => {
+    localStorage.setItem(ELEVEN_KEY_STORAGE, elevenApiKeyInput.value.trim());
+  });
+
+  elevenVoiceSelect.addEventListener('change', () => {
+    localStorage.setItem(ELEVEN_SELECTED_VOICE_STORAGE, elevenVoiceSelect.value);
+  });
+
+  elevenDeleteVoiceBtn.addEventListener('click', () => {
+    const id = elevenVoiceSelect.value;
+    if (!id) return;
+    const list = loadElevenVoiceList().filter((v) => v.id !== id);
+    localStorage.setItem(ELEVEN_VOICES_STORAGE, JSON.stringify(list));
+    renderElevenVoices();
+    elevenStatus.textContent = '削除しました';
+  });
+
+  elevenCloneBtn.addEventListener('click', async () => {
+    const apiKey = elevenApiKeyInput.value.trim();
+    const name = elevenVoiceNameInput.value.trim();
+    const file = elevenVoiceFileInput.files[0];
+    if (!apiKey) {
+      elevenStatus.textContent = 'APIキーを入力してください';
+      return;
+    }
+    if (!name) {
+      elevenStatus.textContent = '声の名前を入力してください';
+      return;
+    }
+    if (!file) {
+      elevenStatus.textContent = '音声サンプルのファイルを選択してください';
+      return;
+    }
+    elevenCloneBtn.disabled = true;
+    elevenStatus.textContent = 'クローンを作成中…(サンプルの長さによっては数十秒かかります)';
+    try {
+      const voiceId = await elevenLabsCloneVoice(name, file, apiKey);
+      saveElevenVoice(voiceId, name);
+      elevenStatus.textContent = `クローン「${name}」を作成しました`;
+      elevenVoiceNameInput.value = '';
+      elevenVoiceFileInput.value = '';
+    } catch (err) {
+      elevenStatus.textContent = err.message || 'クローンの作成に失敗しました';
+    } finally {
+      elevenCloneBtn.disabled = false;
+    }
+  });
+
+  elevenAddExistingBtn.addEventListener('click', () => {
+    const id = elevenExistingIdInput.value.trim();
+    const name = elevenExistingNameInput.value.trim() || 'マイボイス';
+    if (!id) {
+      elevenStatus.textContent = 'Voice IDを入力してください';
+      return;
+    }
+    saveElevenVoice(id, name);
+    elevenExistingIdInput.value = '';
+    elevenExistingNameInput.value = '';
+    elevenStatus.textContent = `「${name}」を登録しました`;
+  });
 
   let deferredInstallPrompt = null;
   window.addEventListener('beforeinstallprompt', (event) => {
