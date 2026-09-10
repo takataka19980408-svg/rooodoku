@@ -28,6 +28,7 @@
   const claudeStatus = document.getElementById('claude-status');
   const noJapaneseVoiceEl = document.getElementById('no-japanese-voice');
   const presetBtns = document.querySelectorAll('.preset-btn');
+  const refreshVoicesBtn = document.getElementById('refresh-voices-btn');
 
   if (!('speechSynthesis' in window)) {
     document.querySelector('.card').hidden = true;
@@ -77,6 +78,8 @@
   if (typeof synth.onvoiceschanged !== 'undefined') {
     synth.onvoiceschanged = loadVoices;
   }
+  // SafariはgetVoices()が初回すぐには埋まらないことがあるので、少し粘って再取得する
+  [300, 800, 1500, 3000].forEach((delay) => setTimeout(loadVoices, delay));
 
   function updateCharCount() {
     charCount.textContent = `${textInput.value.length} 文字`;
@@ -379,6 +382,11 @@
 
   voiceSelect.addEventListener('change', () => {
     localStorage.setItem('rooodoku-voice', voiceSelect.value);
+  });
+
+  refreshVoicesBtn.addEventListener('click', () => {
+    loadVoices();
+    setStatus(`声を再取得しました(${voiceSelect.options.length}件)`);
   });
 
   presetBtns.forEach((btn) => {
