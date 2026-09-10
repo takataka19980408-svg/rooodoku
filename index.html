@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>読み上げくん</title>
+<meta name="description" content="文字を入力して声で読み上げるアプリ">
+<meta name="theme-color" content="#4f46e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="読み上げくん">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>🔊 読み上げくん</h1>
+      <p class="subtitle">文字を入力して、好きな声で読み上げよう</p>
+    </header>
+
+    <button id="install-btn" class="install-banner" type="button" hidden>
+      📲 ホーム画面に追加する
+    </button>
+
+    <main class="card">
+      <label class="field-label" for="text-input">読み上げるテキスト</label>
+      <textarea id="text-input" placeholder="ここに文字を入力してください…" rows="8"></textarea>
+      <div class="text-meta">
+        <span id="char-count">0 文字</span>
+        <button id="clear-btn" class="link-btn" type="button">クリア</button>
+      </div>
+
+      <div class="data-row">
+        <button id="copy-btn" class="btn btn-small" type="button">📋 コピー</button>
+        <button id="paste-btn" class="btn btn-small" type="button">📥 貼り付け</button>
+        <button id="share-btn" class="btn btn-small" type="button" hidden>📤 共有</button>
+        <button id="export-btn" class="btn btn-small" type="button">💾 保存</button>
+        <button id="import-btn" class="btn btn-small" type="button">📂 読み込む</button>
+        <input id="import-file" type="file" accept=".txt,text/plain" hidden>
+      </div>
+      <p class="data-hint">「共有」や「保存」でテキストを書き出し、私(Claude)とのチャットに貼り付ければ編集を頼めます。編集後の文章は貼り付け・読み込みでアプリに戻せます。</p>
+
+      <div class="controls-grid">
+        <div class="control">
+          <label for="voice-select">声の種類</label>
+          <select id="voice-select"></select>
+        </div>
+
+        <div class="control">
+          <label for="rate-range">速さ <span id="rate-value">1.0</span></label>
+          <input type="range" id="rate-range" min="0.5" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control">
+          <label for="pitch-range">高さ <span id="pitch-value">1.0</span></label>
+          <input type="range" id="pitch-range" min="0" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control">
+          <label for="volume-range">音量 <span id="volume-value">100%</span></label>
+          <input type="range" id="volume-range" min="0" max="1" step="0.05" value="1">
+        </div>
+      </div>
+
+      <div class="buttons-row">
+        <button id="play-btn" class="btn btn-primary" type="button">
+          <span class="icon">▶</span> 読み上げ
+        </button>
+        <button id="pause-btn" class="btn" type="button" disabled>
+          <span class="icon">⏸</span> 一時停止
+        </button>
+        <button id="stop-btn" class="btn" type="button" disabled>
+          <span class="icon">⏹</span> 停止
+        </button>
+      </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+    </main>
+
+    <section class="card history-card" hidden id="history-card">
+      <div class="history-header">
+        <h2>履歴</h2>
+        <button id="history-clear-btn" class="link-btn" type="button">履歴を削除</button>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+    </section>
+
+    <p id="unsupported" class="unsupported" hidden>
+      お使いのブラウザは音声読み上げ (Web Speech API) に対応していません。<br>
+      Chrome・Edge・Safariなどの最新ブラウザでお試しください。
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
