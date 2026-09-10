@@ -59,6 +59,25 @@ body {
   font-size: 0.9rem;
 }
 
+.install-banner {
+  display: block;
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--primary);
+  background: var(--accent);
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.install-banner:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
 .card {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -114,6 +133,28 @@ textarea:focus {
 
 .link-btn:hover {
   text-decoration: underline;
+}
+
+.data-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-small {
+  flex: none;
+  min-width: auto;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.data-hint {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .controls-grid {

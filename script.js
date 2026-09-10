@@ -17,6 +17,13 @@
   const historyCard = document.getElementById('history-card');
   const historyList = document.getElementById('history-list');
   const historyClearBtn = document.getElementById('history-clear-btn');
+  const copyBtn = document.getElementById('copy-btn');
+  const pasteBtn = document.getElementById('paste-btn');
+  const shareBtn = document.getElementById('share-btn');
+  const exportBtn = document.getElementById('export-btn');
+  const importBtn = document.getElementById('import-btn');
+  const importFile = document.getElementById('import-file');
+  const installBtn = document.getElementById('install-btn');
 
   if (!('speechSynthesis' in window)) {
     document.querySelector('.card').hidden = true;
@@ -29,6 +36,12 @@
   const MAX_HISTORY = 10;
   let voices = [];
   let isPaused = false;
+  let chunks = [];
+  let chunkIndex = 0;
+  let stoppedManually = false;
+  let keepAliveTimer = null;
+  const MAX_CHUNK_LEN = 180;
+  const KEEP_ALIVE_MS = 10000;
 
   function loadVoices() {
     voices = synth.getVoices();
@@ -80,9 +93,57 @@
     return voices.find((v) => v.voiceURI === voiceSelect.value) || null;
   }
 
-  function speak(text) {
-    synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+  // Chrome/Edge silently cut off SpeechSynthesisUtterance after ~15s on a
+  // long utterance (chromium bug 679437). Splitting into short chunks and
+  // periodically nudging pause/resume works around it so long text reads
+  // to the end in one playback.
+  function splitIntoChunks(text, maxLen = MAX_CHUNK_LEN) {
+    const sentences = text.match(/[^。.!?！？\n]+[。.!?！？\n]?/g) || [text];
+    const result = [];
+    let current = '';
+    sentences.forEach((sentence) => {
+      if (current && (current + sentence).length > maxLen) {
+        result.push(current);
+        current = sentence;
+      } else {
+        current += sentence;
+      }
+      while (current.length > maxLen) {
+        result.push(current.slice(0, maxLen));
+        current = current.slice(maxLen);
+      }
+    });
+    if (current) result.push(current);
+    return result;
+  }
+
+  function startKeepAlive() {
+    stopKeepAlive();
+    keepAliveTimer = setInterval(() => {
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        synth.resume();
+      }
+    }, KEEP_ALIVE_MS);
+  }
+
+  function stopKeepAlive() {
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
+  }
+
+  function speakChunk() {
+    if (chunkIndex >= chunks.length) {
+      stopKeepAlive();
+      isPaused = false;
+      setStatus('読み上げが完了しました');
+      setButtonsState({ playing: false, paused: false });
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
     const voice = getSelectedVoice();
     if (voice) {
       utterance.voice = voice;
@@ -94,22 +155,32 @@
 
     utterance.onstart = () => {
       isPaused = false;
-      setStatus('読み上げ中…');
+      setStatus(`読み上げ中… (${chunkIndex + 1}/${chunks.length})`);
       setButtonsState({ playing: true, paused: false });
     };
     utterance.onend = () => {
-      isPaused = false;
-      setStatus('読み上げが完了しました');
-      setButtonsState({ playing: false, paused: false });
+      if (stoppedManually) return;
+      chunkIndex += 1;
+      speakChunk();
     };
     utterance.onerror = (event) => {
       if (event.error === 'canceled' || event.error === 'interrupted') return;
+      stopKeepAlive();
       isPaused = false;
       setStatus(`エラーが発生しました: ${event.error}`);
       setButtonsState({ playing: false, paused: false });
     };
 
     synth.speak(utterance);
+  }
+
+  function speak(text) {
+    stoppedManually = false;
+    synth.cancel();
+    chunks = splitIntoChunks(text);
+    chunkIndex = 0;
+    startKeepAlive();
+    speakChunk();
   }
 
   function handlePlay() {
@@ -145,7 +216,9 @@
   }
 
   function handleStop() {
+    stoppedManually = true;
     synth.cancel();
+    stopKeepAlive();
     isPaused = false;
     setStatus('停止しました');
     setButtonsState({ playing: false, paused: false });
@@ -200,6 +273,88 @@
       historyList.appendChild(li);
     });
   }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(textInput.value);
+      setStatus('クリップボードにコピーしました');
+    } catch {
+      setStatus('コピーに失敗しました');
+    }
+  }
+
+  async function handlePaste() {
+    try {
+      const text = await navigator.clipboard.readText();
+      textInput.value = text;
+      updateCharCount();
+      setStatus('クリップボードから貼り付けました');
+    } catch {
+      setStatus('貼り付けに失敗しました(ブラウザの権限をご確認ください)');
+    }
+  }
+
+  async function handleShare() {
+    try {
+      await navigator.share({ text: textInput.value, title: '読み上げくん' });
+    } catch {
+      // ユーザーによるキャンセルなどは無視
+    }
+  }
+
+  function handleExport() {
+    const blob = new Blob([textInput.value], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `yomiage-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setStatus('テキストファイルを保存しました');
+  }
+
+  function handleImportChange() {
+    const file = importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      textInput.value = String(reader.result);
+      updateCharCount();
+      setStatus(`「${file.name}」を読み込みました`);
+    };
+    reader.onerror = () => setStatus('ファイルの読み込みに失敗しました');
+    reader.readAsText(file);
+    importFile.value = '';
+  }
+
+  if (navigator.share) {
+    shareBtn.hidden = false;
+    shareBtn.addEventListener('click', handleShare);
+  }
+  copyBtn.addEventListener('click', handleCopy);
+  pasteBtn.addEventListener('click', handlePaste);
+  exportBtn.addEventListener('click', handleExport);
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', handleImportChange);
+
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installBtn.hidden = false;
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    installBtn.hidden = true;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+  });
+  window.addEventListener('appinstalled', () => {
+    installBtn.hidden = true;
+  });
 
   textInput.addEventListener('input', updateCharCount);
   clearBtn.addEventListener('click', () => {
