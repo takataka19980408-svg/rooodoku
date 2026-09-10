@@ -59,6 +59,13 @@
       </div>
 
       <p id="status" class="status" aria-live="polite"></p>
+
+      <div class="record-row" id="record-row">
+        <button id="record-btn" class="btn" type="button">🎙️ 録音して読み上げ</button>
+        <p class="voice-tip">マイクでスピーカーの音を録音します。静かな場所で、音量は適度に上げて試してください。</p>
+      </div>
+      <audio id="recorded-audio" controls hidden></audio>
+      <button id="download-recording-btn" class="btn btn-small" type="button" hidden>💾 録音を保存</button>
     </main>
 
     <details class="card details-card">

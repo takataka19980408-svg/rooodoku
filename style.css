@@ -318,6 +318,25 @@ textarea:focus {
   text-align: center;
 }
 
+.record-row {
+  margin-top: 10px;
+}
+
+.record-row .btn.recording {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+#recorded-audio {
+  width: 100%;
+  margin-top: 10px;
+}
+
+#download-recording-btn {
+  margin-top: 8px;
+}
+
 .details-card {
   padding: 16px 20px;
 }
