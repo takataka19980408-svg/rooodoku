@@ -350,45 +350,6 @@ textarea:focus {
   gap: 10px;
 }
 
-#ai-voice-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.details-body input[type="password"],
-.details-body input[type="text"] {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.9rem;
-  width: 100%;
-}
-
-.details-body input[type="file"] {
-  font-size: 0.82rem;
-  color: var(--muted);
-}
-
-.eleven-details {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.eleven-details summary {
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.eleven-details > *:not(summary) {
-  margin-top: 10px;
-}
-
 .toggle {
   display: flex;
   align-items: center;
