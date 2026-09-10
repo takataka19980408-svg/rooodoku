@@ -126,6 +126,11 @@ textarea:focus {
   color: var(--muted);
 }
 
+.text-meta-actions {
+  display: flex;
+  gap: 14px;
+}
+
 .link-btn {
   background: none;
   border: none;

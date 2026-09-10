@@ -18,6 +18,7 @@
   const historyList = document.getElementById('history-list');
   const historyClearBtn = document.getElementById('history-clear-btn');
   const copyBtn = document.getElementById('copy-btn');
+  const quickCopyBtn = document.getElementById('quick-copy-btn');
   const pasteBtn = document.getElementById('paste-btn');
   const shareBtn = document.getElementById('share-btn');
   const exportBtn = document.getElementById('export-btn');
@@ -265,6 +266,15 @@
         textInput.focus();
       });
 
+      const copyItemBtn = document.createElement('button');
+      copyItemBtn.type = 'button';
+      copyItemBtn.textContent = '📋';
+      copyItemBtn.title = 'コピー';
+      copyItemBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        copyTextToClipboard(text);
+      });
+
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.textContent = '✕';
@@ -276,18 +286,23 @@
       });
 
       li.appendChild(span);
+      li.appendChild(copyItemBtn);
       li.appendChild(delBtn);
       historyList.appendChild(li);
     });
   }
 
-  async function handleCopy() {
+  async function copyTextToClipboard(text) {
     try {
-      await navigator.clipboard.writeText(textInput.value);
+      await navigator.clipboard.writeText(text);
       setStatus('クリップボードにコピーしました');
     } catch {
       setStatus('コピーに失敗しました');
     }
+  }
+
+  function handleCopy() {
+    return copyTextToClipboard(textInput.value);
   }
 
   async function handlePaste() {
@@ -341,6 +356,7 @@
     shareBtn.addEventListener('click', handleShare);
   }
   copyBtn.addEventListener('click', handleCopy);
+  quickCopyBtn.addEventListener('click', handleCopy);
   pasteBtn.addEventListener('click', handlePaste);
   exportBtn.addEventListener('click', handleExport);
   importBtn.addEventListener('click', () => importFile.click());
