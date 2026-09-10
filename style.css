@@ -178,6 +178,16 @@ textarea:focus {
   justify-content: space-between;
 }
 
+.control-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.control-label-row label {
+  display: block;
+}
+
 .voice-hint {
   margin: 4px 0 0;
   font-size: 0.72rem;
