@@ -252,6 +252,50 @@ textarea:focus {
   text-align: center;
 }
 
+.claude-card {
+  padding: 16px 20px;
+}
+
+.claude-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.claude-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.toggle input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+}
+
+.claude-status {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.claude-status.has-message {
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .history-header {
   display: flex;
   justify-content: space-between;
