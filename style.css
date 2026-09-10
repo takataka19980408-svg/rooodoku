@@ -178,6 +178,13 @@ textarea:focus {
   justify-content: space-between;
 }
 
+.voice-hint {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
 .control select {
   padding: 8px 10px;
   border-radius: 8px;
