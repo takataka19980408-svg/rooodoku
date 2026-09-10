@@ -257,7 +257,15 @@
     }
 
     try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // エコーキャンセル/ノイズ抑制はスピーカーの音を"エコー"として消してしまうため、
+      // スピーカー音をマイクで録るこの用途ではすべて無効化する
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
     } catch {
       setStatus('マイクへのアクセスが許可されませんでした');
       return;
