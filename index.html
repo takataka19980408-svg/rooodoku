@@ -51,6 +51,7 @@
           <p id="no-japanese-voice" class="voice-hint" hidden>
             日本語の音声が見つかりませんでした。端末の設定で日本語の音声合成を追加すると選べるようになります。
           </p>
+          <p class="voice-tip">💡 声のバリエーションや自然さを増やしたいときは、端末の設定で日本語の音声を追加ダウンロードすると、ここに増えます(iPhoneは 設定→アクセシビリティ→読み上げコンテンツ→声→日本語)。</p>
         </div>
 
         <div class="control">
@@ -67,6 +68,15 @@
           <label for="volume-range">音量 <span id="volume-value">100%</span></label>
           <input type="range" id="volume-range" min="0" max="1" step="0.05" value="1">
         </div>
+      </div>
+
+      <div class="preset-row">
+        <span class="preset-label">話し方:</span>
+        <button class="preset-btn" type="button" data-rate="1" data-pitch="1">😐 ふつう</button>
+        <button class="preset-btn" type="button" data-rate="1.15" data-pitch="1.15">😄 元気</button>
+        <button class="preset-btn" type="button" data-rate="0.85" data-pitch="0.85">😌 落ち着き</button>
+        <button class="preset-btn" type="button" data-rate="0.75" data-pitch="1">🐢 ゆっくり</button>
+        <button class="preset-btn" type="button" data-rate="1.05" data-pitch="0.9">📢 はきはき</button>
       </div>
 
       <div class="buttons-row">

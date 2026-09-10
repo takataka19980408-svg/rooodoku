@@ -27,6 +27,7 @@
   const autoReceiveToggle = document.getElementById('auto-receive-toggle');
   const claudeStatus = document.getElementById('claude-status');
   const noJapaneseVoiceEl = document.getElementById('no-japanese-voice');
+  const presetBtns = document.querySelectorAll('.preset-btn');
 
   if (!('speechSynthesis' in window)) {
     document.querySelector('.card').hidden = true;
@@ -378,6 +379,16 @@
 
   voiceSelect.addEventListener('change', () => {
     localStorage.setItem('rooodoku-voice', voiceSelect.value);
+  });
+
+  presetBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      rateRange.value = btn.dataset.rate;
+      pitchRange.value = btn.dataset.pitch;
+      rateRange.dispatchEvent(new Event('input'));
+      pitchRange.dispatchEvent(new Event('input'));
+      presetBtns.forEach((b) => b.classList.toggle('active', b === btn));
+    });
   });
 
   playBtn.addEventListener('click', handlePlay);
