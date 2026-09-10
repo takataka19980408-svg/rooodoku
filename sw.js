@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yomiagekun-v1';
+const CACHE_NAME = 'yomiagekun-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -28,6 +28,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('queue.json')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const network = fetch(event.request)

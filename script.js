@@ -24,6 +24,8 @@
   const importBtn = document.getElementById('import-btn');
   const importFile = document.getElementById('import-file');
   const installBtn = document.getElementById('install-btn');
+  const autoReceiveToggle = document.getElementById('auto-receive-toggle');
+  const claudeStatus = document.getElementById('claude-status');
 
   if (!('speechSynthesis' in window)) {
     document.querySelector('.card').hidden = true;
@@ -386,6 +388,51 @@
   });
 
   window.addEventListener('beforeunload', () => synth.cancel());
+
+  // Claude message polling: Claude pushes text into queue.json in the repo;
+  // the app checks it periodically and (optionally) reads it aloud right away.
+  const LAST_MSG_KEY = 'rooodoku-last-msg-id';
+  const AUTO_RECEIVE_KEY = 'rooodoku-auto-receive';
+  const POLL_INTERVAL_MS = 8000;
+
+  const savedAutoReceive = localStorage.getItem(AUTO_RECEIVE_KEY);
+  if (savedAutoReceive !== null) {
+    autoReceiveToggle.checked = savedAutoReceive === 'true';
+  }
+  autoReceiveToggle.addEventListener('change', () => {
+    localStorage.setItem(AUTO_RECEIVE_KEY, String(autoReceiveToggle.checked));
+  });
+
+  async function checkForClaudeMessage() {
+    let data;
+    try {
+      const response = await fetch(`queue.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) return;
+      data = await response.json();
+    } catch {
+      return;
+    }
+
+    const lastId = parseInt(localStorage.getItem(LAST_MSG_KEY) || '0', 10);
+    if (!data || !data.id || data.id <= lastId || !data.text) return;
+
+    localStorage.setItem(LAST_MSG_KEY, String(data.id));
+    textInput.value = data.text;
+    updateCharCount();
+    claudeStatus.textContent = `Claudeからメッセージが届きました(${new Date().toLocaleTimeString('ja-JP')})`;
+    claudeStatus.classList.add('has-message');
+
+    if (autoReceiveToggle.checked) {
+      speak(data.text);
+      saveHistory(data.text);
+    }
+  }
+
+  setInterval(checkForClaudeMessage, POLL_INTERVAL_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForClaudeMessage();
+  });
+  checkForClaudeMessage();
 
   updateCharCount();
   renderHistory();
