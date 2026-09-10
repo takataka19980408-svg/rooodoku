@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yomiagekun-v2';
+const CACHE_NAME = 'yomiagekun-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -32,18 +32,18 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(event.request));
     return;
   }
+  // Network-first: always try to get the latest version while online, and
+  // only fall back to the cache when offline. (The previous cache-first
+  // approach meant app updates never showed up until a second reload.)
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
