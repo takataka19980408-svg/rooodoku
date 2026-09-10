@@ -26,6 +26,7 @@
   const installBtn = document.getElementById('install-btn');
   const autoReceiveToggle = document.getElementById('auto-receive-toggle');
   const claudeStatus = document.getElementById('claude-status');
+  const noJapaneseVoiceEl = document.getElementById('no-japanese-voice');
 
   if (!('speechSynthesis' in window)) {
     document.querySelector('.card').hidden = true;
@@ -46,18 +47,18 @@
   const KEEP_ALIVE_MS = 10000;
 
   function loadVoices() {
-    voices = synth.getVoices();
-    if (!voices.length) return;
+    const allVoices = synth.getVoices();
+    if (!allVoices.length) return;
+
+    // 日本語の声だけに絞る(見つからない端末では全件を出す)
+    const japaneseVoices = allVoices.filter((v) => v.lang.toLowerCase().startsWith('ja'));
+    voices = japaneseVoices.length ? japaneseVoices : allVoices;
+    noJapaneseVoiceEl.hidden = japaneseVoices.length > 0;
 
     const savedVoiceURI = localStorage.getItem('rooodoku-voice');
     voiceSelect.innerHTML = '';
 
-    const sorted = [...voices].sort((a, b) => {
-      const aJa = a.lang.startsWith('ja') ? 0 : 1;
-      const bJa = b.lang.startsWith('ja') ? 0 : 1;
-      if (aJa !== bJa) return aJa - bJa;
-      return a.name.localeCompare(b.name);
-    });
+    const sorted = [...voices].sort((a, b) => a.name.localeCompare(b.name));
 
     sorted.forEach((voice) => {
       const option = document.createElement('option');
