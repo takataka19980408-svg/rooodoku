@@ -34,53 +34,14 @@
         <button id="clear-btn" class="link-btn" type="button">クリア</button>
       </div>
 
-      <div class="data-row">
-        <button id="copy-btn" class="btn btn-small" type="button">📋 コピー</button>
-        <button id="paste-btn" class="btn btn-small" type="button">📥 貼り付け</button>
-        <button id="share-btn" class="btn btn-small" type="button" hidden>📤 共有</button>
-        <button id="export-btn" class="btn btn-small" type="button">💾 保存</button>
-        <button id="import-btn" class="btn btn-small" type="button">📂 読み込む</button>
-        <input id="import-file" type="file" accept=".txt,text/plain" hidden>
+      <div class="control-label-row">
+        <label for="voice-select">声の種類</label>
+        <button id="refresh-voices-btn" class="link-btn" type="button">🔄 再取得</button>
       </div>
-      <p class="data-hint">「共有」や「保存」でテキストを書き出し、私(Claude)とのチャットに貼り付ければ編集を頼めます。編集後の文章は貼り付け・読み込みでアプリに戻せます。</p>
-
-      <div class="controls-grid">
-        <div class="control">
-          <div class="control-label-row">
-            <label for="voice-select">声の種類</label>
-            <button id="refresh-voices-btn" class="link-btn" type="button">🔄 再取得</button>
-          </div>
-          <select id="voice-select"></select>
-          <p id="no-japanese-voice" class="voice-hint" hidden>
-            日本語の音声が見つかりませんでした。端末の設定で日本語の音声合成を追加すると選べるようになります。
-          </p>
-          <p class="voice-tip">💡 声のバリエーションや自然さを増やしたいときは、端末の設定で日本語の音声を追加ダウンロードすると、ここに増えます(iPhoneは 設定→アクセシビリティ→読み上げコンテンツ→声→日本語)。</p>
-        </div>
-
-        <div class="control">
-          <label for="rate-range">速さ <span id="rate-value">1.0</span></label>
-          <input type="range" id="rate-range" min="0.5" max="2" step="0.1" value="1">
-        </div>
-
-        <div class="control">
-          <label for="pitch-range">高さ <span id="pitch-value">1.0</span></label>
-          <input type="range" id="pitch-range" min="0" max="2" step="0.1" value="1">
-        </div>
-
-        <div class="control">
-          <label for="volume-range">音量 <span id="volume-value">100%</span></label>
-          <input type="range" id="volume-range" min="0" max="1" step="0.05" value="1">
-        </div>
-      </div>
-
-      <div class="preset-row">
-        <span class="preset-label">話し方:</span>
-        <button class="preset-btn" type="button" data-rate="1" data-pitch="1">😐 ふつう</button>
-        <button class="preset-btn" type="button" data-rate="1.15" data-pitch="1.15">😄 元気</button>
-        <button class="preset-btn" type="button" data-rate="0.85" data-pitch="0.85">😌 落ち着き</button>
-        <button class="preset-btn" type="button" data-rate="0.75" data-pitch="1">🐢 ゆっくり</button>
-        <button class="preset-btn" type="button" data-rate="1.05" data-pitch="0.9">📢 はきはき</button>
-      </div>
+      <select id="voice-select"></select>
+      <p id="no-japanese-voice" class="voice-hint" hidden>
+        日本語の音声が見つかりませんでした。端末の設定で日本語の音声合成を追加すると選べるようになります。
+      </p>
 
       <div class="buttons-row">
         <button id="play-btn" class="btn btn-primary" type="button">
@@ -97,71 +58,119 @@
       <p id="status" class="status" aria-live="polite"></p>
     </main>
 
-    <section class="card ai-voice-card">
-      <div class="claude-header">
-        <h2>🎙️ AIクローン音声</h2>
-        <label class="toggle">
-          <input type="checkbox" id="ai-voice-toggle">
-          <span>AI音声を使う</span>
-        </label>
-      </div>
+    <details class="card details-card">
+      <summary>🎛 声の詳細設定</summary>
+      <div class="details-body">
+        <div class="controls-grid">
+          <div class="control">
+            <label for="rate-range">速さ <span id="rate-value">1.0</span></label>
+            <input type="range" id="rate-range" min="0.5" max="2" step="0.1" value="1">
+          </div>
 
-      <div id="ai-voice-settings" hidden>
-        <p class="data-hint">
-          ElevenLabsのAPIキーはこの端末のブラウザだけに保存され、コードやGitHubには保存されません。文字数に応じてElevenLabs側のクレジットを消費します。
-        </p>
+          <div class="control">
+            <label for="pitch-range">高さ <span id="pitch-value">1.0</span></label>
+            <input type="range" id="pitch-range" min="0" max="2" step="0.1" value="1">
+          </div>
 
-        <div class="control">
-          <label for="eleven-api-key">APIキー</label>
-          <input type="password" id="eleven-api-key" placeholder="ElevenLabsのAPIキー" autocomplete="off">
+          <div class="control">
+            <label for="volume-range">音量 <span id="volume-value">100%</span></label>
+            <input type="range" id="volume-range" min="0" max="1" step="0.05" value="1">
+          </div>
         </div>
 
-        <div class="control-label-row">
-          <label for="eleven-voice-select">使う声</label>
-          <button id="eleven-delete-voice-btn" class="link-btn" type="button">🗑 削除</button>
+        <div class="preset-row">
+          <span class="preset-label">話し方:</span>
+          <button class="preset-btn" type="button" data-rate="1" data-pitch="1">😐 ふつう</button>
+          <button class="preset-btn" type="button" data-rate="1.15" data-pitch="1.15">😄 元気</button>
+          <button class="preset-btn" type="button" data-rate="0.85" data-pitch="0.85">😌 落ち着き</button>
+          <button class="preset-btn" type="button" data-rate="0.75" data-pitch="1">🐢 ゆっくり</button>
+          <button class="preset-btn" type="button" data-rate="1.05" data-pitch="0.9">📢 はきはき</button>
         </div>
-        <select id="eleven-voice-select"></select>
 
-        <details class="eleven-details">
-          <summary>＋ 新しい声をクローン作成</summary>
-          <div class="control">
-            <label for="eleven-voice-name">声の名前</label>
-            <input type="text" id="eleven-voice-name" placeholder="例: 自分の声">
-          </div>
-          <div class="control">
-            <label for="eleven-voice-file">音声サンプル(1分程度、クリアな音声推奨)</label>
-            <input type="file" id="eleven-voice-file" accept="audio/*">
-          </div>
-          <button id="eleven-clone-btn" class="btn btn-small" type="button">クローンを作成</button>
-        </details>
-
-        <details class="eleven-details">
-          <summary>＋ 既存のVoice IDを登録</summary>
-          <div class="control">
-            <label for="eleven-existing-name">声の名前</label>
-            <input type="text" id="eleven-existing-name" placeholder="例: マイボイス">
-          </div>
-          <div class="control">
-            <label for="eleven-existing-id">Voice ID</label>
-            <input type="text" id="eleven-existing-id" placeholder="ElevenLabsのVoice ID">
-          </div>
-          <button id="eleven-add-existing-btn" class="btn btn-small" type="button">登録</button>
-        </details>
-
-        <p id="eleven-status" class="claude-status"></p>
+        <p class="voice-tip">💡 声を増やす・自然にするには、端末の設定で日本語の音声を追加ダウンロード(iPhoneは 設定→アクセシビリティ→読み上げコンテンツ→声→日本語)。</p>
       </div>
-    </section>
+    </details>
 
-    <section class="card claude-card">
-      <div class="claude-header">
-        <h2>🤖 Claude連携</h2>
+    <details class="card details-card">
+      <summary>📤 テキストの送受信</summary>
+      <div class="details-body">
+        <div class="data-row">
+          <button id="copy-btn" class="btn btn-small" type="button">📋 コピー</button>
+          <button id="paste-btn" class="btn btn-small" type="button">📥 貼り付け</button>
+          <button id="share-btn" class="btn btn-small" type="button" hidden>📤 共有</button>
+          <button id="export-btn" class="btn btn-small" type="button">💾 保存</button>
+          <button id="import-btn" class="btn btn-small" type="button">📂 読み込む</button>
+          <input id="import-file" type="file" accept=".txt,text/plain" hidden>
+        </div>
+        <p class="data-hint">「共有」や「保存」でテキストを書き出し、私(Claude)とのチャットに貼り付ければ編集を頼めます。編集後の文章は貼り付け・読み込みでアプリに戻せます。</p>
+      </div>
+    </details>
+
+    <details class="card details-card">
+      <summary>🤖 Claude連携</summary>
+      <div class="details-body">
         <label class="toggle">
           <input type="checkbox" id="auto-receive-toggle" checked>
           <span>自動で読み上げる</span>
         </label>
+        <p id="claude-status" class="claude-status">待機中… Claudeがメッセージを送るとここに届きます</p>
       </div>
-      <p id="claude-status" class="claude-status">待機中… Claudeがメッセージを送るとここに届きます</p>
-    </section>
+    </details>
+
+    <details class="card details-card">
+      <summary>🎙️ AIクローン音声</summary>
+      <div class="details-body">
+        <label class="toggle">
+          <input type="checkbox" id="ai-voice-toggle">
+          <span>AI音声を使う</span>
+        </label>
+
+        <div id="ai-voice-settings" hidden>
+          <p class="data-hint">
+            ElevenLabsのAPIキーはこの端末のブラウザだけに保存され、コードやGitHubには保存されません。文字数に応じてElevenLabs側のクレジットを消費します。
+          </p>
+
+          <div class="control">
+            <label for="eleven-api-key">APIキー</label>
+            <input type="password" id="eleven-api-key" placeholder="ElevenLabsのAPIキー" autocomplete="off">
+          </div>
+
+          <div class="control-label-row">
+            <label for="eleven-voice-select">使う声</label>
+            <button id="eleven-delete-voice-btn" class="link-btn" type="button">🗑 削除</button>
+          </div>
+          <select id="eleven-voice-select"></select>
+
+          <details class="eleven-details">
+            <summary>＋ 新しい声をクローン作成</summary>
+            <div class="control">
+              <label for="eleven-voice-name">声の名前</label>
+              <input type="text" id="eleven-voice-name" placeholder="例: 自分の声">
+            </div>
+            <div class="control">
+              <label for="eleven-voice-file">音声サンプル(1分程度、クリアな音声推奨)</label>
+              <input type="file" id="eleven-voice-file" accept="audio/*">
+            </div>
+            <button id="eleven-clone-btn" class="btn btn-small" type="button">クローンを作成</button>
+          </details>
+
+          <details class="eleven-details">
+            <summary>＋ 既存のVoice IDを登録</summary>
+            <div class="control">
+              <label for="eleven-existing-name">声の名前</label>
+              <input type="text" id="eleven-existing-name" placeholder="例: マイボイス">
+            </div>
+            <div class="control">
+              <label for="eleven-existing-id">Voice ID</label>
+              <input type="text" id="eleven-existing-id" placeholder="ElevenLabsのVoice ID">
+            </div>
+            <button id="eleven-add-existing-btn" class="btn btn-small" type="button">登録</button>
+          </details>
+
+          <p id="eleven-status" class="claude-status"></p>
+        </div>
+      </div>
+    </details>
 
     <section class="card history-card" hidden id="history-card">
       <div class="history-header">
