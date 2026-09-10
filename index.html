@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>読み上げくん</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>🔊 読み上げくん</h1>
+      <p class="subtitle">文字を入力して、好きな声で読み上げよう</p>
+    </header>
+
+    <main class="card">
+      <label class="field-label" for="text-input">読み上げるテキスト</label>
+      <textarea id="text-input" placeholder="ここに文字を入力してください…" rows="8"></textarea>
+      <div class="text-meta">
+        <span id="char-count">0 文字</span>
+        <button id="clear-btn" class="link-btn" type="button">クリア</button>
+      </div>
+
+      <div class="controls-grid">
+        <div class="control">
+          <label for="voice-select">声の種類</label>
+          <select id="voice-select"></select>
+        </div>
+
+        <div class="control">
+          <label for="rate-range">速さ <span id="rate-value">1.0</span></label>
+          <input type="range" id="rate-range" min="0.5" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control">
+          <label for="pitch-range">高さ <span id="pitch-value">1.0</span></label>
+          <input type="range" id="pitch-range" min="0" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control">
+          <label for="volume-range">音量 <span id="volume-value">100%</span></label>
+          <input type="range" id="volume-range" min="0" max="1" step="0.05" value="1">
+        </div>
+      </div>
+
+      <div class="buttons-row">
+        <button id="play-btn" class="btn btn-primary" type="button">
+          <span class="icon">▶</span> 読み上げ
+        </button>
+        <button id="pause-btn" class="btn" type="button" disabled>
+          <span class="icon">⏸</span> 一時停止
+        </button>
+        <button id="stop-btn" class="btn" type="button" disabled>
+          <span class="icon">⏹</span> 停止
+        </button>
+      </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+    </main>
+
+    <section class="card history-card" hidden id="history-card">
+      <div class="history-header">
+        <h2>履歴</h2>
+        <button id="history-clear-btn" class="link-btn" type="button">履歴を削除</button>
+      </div>
+      <ul id="history-list" class="history-list"></ul>
+    </section>
+
+    <p id="unsupported" class="unsupported" hidden>
+      お使いのブラウザは音声読み上げ (Web Speech API) に対応していません。<br>
+      Chrome・Edge・Safariなどの最新ブラウザでお試しください。
+    </p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
