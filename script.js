@@ -216,15 +216,27 @@
 
   // --- ElevenLabs AIクローン音声 ---
   async function elevenLabsRequest(url, options) {
-    const response = await fetch(url, options);
+    let response;
+    try {
+      response = await fetch(url, options);
+    } catch (networkErr) {
+      throw new Error(
+        `ElevenLabsに接続できませんでした(${networkErr.message})。通信環境を確認するか、しばらくしてから再試行してください。`
+      );
+    }
     if (!response.ok) {
-      let message = `エラー(${response.status})`;
+      let message = `ElevenLabsがエラーを返しました(${response.status})`;
       try {
         const err = await response.json();
         const detail = err.detail;
         message += `: ${(detail && (detail.message || detail)) || JSON.stringify(err)}`;
       } catch {
         // レスポンスがJSONでない場合はそのまま
+      }
+      if (response.status === 401) {
+        message += ' — APIキーが正しいか確認してください。';
+      } else if (response.status === 422) {
+        message += ' — 音声ファイルの形式や名前を確認してください。';
       }
       throw new Error(message);
     }
