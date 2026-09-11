@@ -59,14 +59,23 @@
       </div>
 
       <p id="status" class="status" aria-live="polite"></p>
-
-      <div class="record-row" id="record-row">
-        <button id="record-btn" class="btn" type="button">🎙️ 録音して読み上げ</button>
-        <p class="voice-tip">マイクでスピーカーの音を録音します。静かな場所で、音量はしっかり上げて試してください。イヤホン/AirPods接続時はうまく録れないので外してください。</p>
-      </div>
-      <audio id="recorded-audio" controls hidden></audio>
-      <button id="download-recording-btn" class="btn btn-small" type="button" hidden>💾 録音を保存</button>
     </main>
+
+    <details class="card details-card">
+      <summary>🎥 読み上げ音声をファイルとして残したい</summary>
+      <div class="details-body">
+        <p class="data-hint">
+          ブラウザの読み上げ機能には音声を直接書き出す仕組みがないので、iPhone標準の「画面収録」を使うのが一番確実です。
+        </p>
+        <ol class="record-steps">
+          <li>設定 → コントロールセンター で「画面収録」を追加(未追加の場合)</li>
+          <li>コントロールセンターを開き、画面収録のアイコンを長押し</li>
+          <li>「マイク」をオフにして「収録を開始」</li>
+          <li>このアプリに戻り、通常どおり「読み上げ」ボタンを押す</li>
+          <li>読み終わったらコントロールセンターの赤い収録マークで停止(写真アプリに動画で保存されます)</li>
+        </ol>
+      </div>
+    </details>
 
     <details class="card details-card">
       <summary>🎛 声の詳細設定</summary>
